@@ -5,7 +5,7 @@ import google.generativeai as genai
 import os
 import fitz  # PyMuPDF for PDF parsing
 import tempfile
-import moviepy.editor as mp  # For basic video processing
+import cv2  # For basic video processing
 import whisper  # For speech-to-text
 from pytube import YouTube  # For YouTube video downloads
 from docx import Document
@@ -62,6 +62,27 @@ if uploaded_video is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_video:
         tmp_video.write(uploaded_video.read())
         tmp_video_path = tmp_video.name
+        
+    # OpenCV video processing
+    cap = cv2.VideoCapture(tmp_video_path)  # Open video file
+    audio_path = tmp_video_path.replace(".mp4", ".wav")
+    frames = []
+    # Extract frames for transcription
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frames.append(frame)  # Collect frames for potential processing (if needed)
+    
+    cap.release()
+    # Convert video to audio for transcription
+    clip = cv2.VideoCapture(tmp_video_path)
+    # You can extract audio from the video here with external libraries like `pydub` or `ffmpeg`
+    # Use Whisper or other libraries for transcription
+
+    model_whisper = whisper.load_model("base")
+    result = model_whisper.transcribe(audio_path)
+    video_transcript += result["text"]
 
     audio_path = tmp_video_path.replace(".mp4", ".wav")
     clip = mp.VideoFileClip(tmp_video_path)
