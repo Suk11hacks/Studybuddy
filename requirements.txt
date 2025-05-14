@@ -3,3 +3,9 @@ duckduckgo_search
 google-generativeai
 pymupdf
 OpenCV
+moviepy
+openai-whisper
+pytube
+python-docx
+fpdf
+sqlite3  # optional; part of stdlib but doesn't hurt
