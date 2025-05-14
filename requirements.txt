@@ -1,3 +1,4 @@
 streamlit
 duckduckgo_search
 google-generativeai
+pymupdf
