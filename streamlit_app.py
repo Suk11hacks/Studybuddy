@@ -6,7 +6,7 @@ import google.generativeai as genai
 import os
 
 st.set_page_config(page_title="Chemistry Notes Generator", layout="centered")
-st.title("🔬 AI Chemistry Notes Generator")
+st.title("🔬 Studybuddy")
 st.markdown("""
 This app uses **DuckDuckGo** for search and **Gemini (free-tier)** to generate notes from chemistry MCQ questions.
 """)
