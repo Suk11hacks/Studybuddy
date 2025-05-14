@@ -2,4 +2,4 @@ streamlit
 duckduckgo_search
 google-generativeai
 pymupdf
-moviepy
+OpenCV
