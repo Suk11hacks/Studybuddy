@@ -1,17 +1,17 @@
 # streamlit_app.py
 import streamlit as st
-from duckduckgo_search import DDGS
 import google.generativeai as genai
 import os
 import fitz  # PyMuPDF for PDF parsing
 import tempfile
-import cv2  # For basic video processing
 import whisper  # For speech-to-text
 from pytube import YouTube  # For YouTube video downloads
 from docx import Document
 from fpdf import FPDF
 import sqlite3
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 # Load API key securely from Streamlit secrets
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -58,39 +58,7 @@ if uploaded_pdf is not None:
 
 video_transcript = ""
 if uploaded_video is not None:
-    st.info("Processing uploaded video for transcript...")
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_video:
-        tmp_video.write(uploaded_video.read())
-        tmp_video_path = tmp_video.name
-        
-    # OpenCV video processing
-    cap = cv2.VideoCapture(tmp_video_path)  # Open video file
-    audio_path = tmp_video_path.replace(".mp4", ".wav")
-    frames = []
-    # Extract frames for transcription
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frames.append(frame)  # Collect frames for potential processing (if needed)
-    
-    cap.release()
-    # Convert video to audio for transcription
-    clip = cv2.VideoCapture(tmp_video_path)
-    # You can extract audio from the video here with external libraries like `pydub` or `ffmpeg`
-    # Use Whisper or other libraries for transcription
-
-    model_whisper = whisper.load_model("base")
-    result = model_whisper.transcribe(audio_path)
-    video_transcript += result["text"]
-
-    audio_path = tmp_video_path.replace(".mp4", ".wav")
-    clip = mp.VideoFileClip(tmp_video_path)
-    clip.audio.write_audiofile(audio_path)
-
-    model_whisper = whisper.load_model("base")
-    result = model_whisper.transcribe(audio_path)
-    video_transcript += result["text"]
+    st.warning("Uploaded video transcription is currently disabled due to environment limitations.")
 
 if youtube_url:
     st.info("Processing YouTube video...")
@@ -104,24 +72,40 @@ if youtube_url:
     except Exception as e:
         st.error(f"Error processing YouTube video: {e}")
 
+# New web scraping function
+
+def search_bing_scrape(query, max_results=5):
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    results = []
+    try:
+        resp = requests.get(f"https://www.bing.com/search?q={query}", headers=headers)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for item in soup.select(".b_algo")[:max_results]:
+            title_elem = item.find("h2")
+            snippet_elem = item.find("p")
+            link_elem = item.find("a", href=True)
+            if title_elem and link_elem:
+                results.append({
+                    "title": title_elem.text.strip(),
+                    "snippet": snippet_elem.text.strip() if snippet_elem else "",
+                    "url": link_elem["href"]
+                })
+    except Exception as e:
+        st.error(f"Web scraping search failed: {e}")
+        results.append({
+            "title": "Search failed",
+            "snippet": str(e),
+            "url": "#"
+        })
+    return results
+
 if st.button("Generate Notes") and query:
     with st.spinner("Searching web and generating notes..."):
-        # Step 1: DuckDuckGo search
-        def search_duckduckgo(query, max_results=5):
-            results = []
-            with DDGS() as ddgs:
-                for r in ddgs.text(query, max_results=max_results):
-                    results.append({
-                        "title": r["title"],
-                        "snippet": r["body"],
-                        "url": r["href"]
-                    })
-            return results
-
-        search_results = search_duckduckgo(query)
+        search_results = search_bing_scrape(query)
         context_chunks = [res['snippet'] for res in search_results]
 
-        # Step 2: Generate notes
         def generate_notes_with_context(question, context_chunks, pdf_text="", video_text="", custom="", fmt=""):
             full_context = "\n\n".join(context_chunks)
             prompt = f"""
@@ -162,7 +146,6 @@ If it's a mechanism, explain every step clearly.
             fmt=note_formatting
         )
 
-        # Optional summary
         summary = ""
         if show_summary:
             summary_prompt = f"Summarize this content for a chemistry student:\n\n{pdf_context}\n\n{video_transcript}"
@@ -196,7 +179,6 @@ If it's a mechanism, explain every step clearly.
             doc.save(f.name)
             st.download_button("📝 Download Notes as DOCX", data=open(f.name, "rb").read(), file_name="chem_notes.docx")
 
-        # Generate MCQs and Flashcards
         flashcard_output = ""
         if generate_flashcards:
             st.subheader("🧩 Flashcards and Practice Questions")
@@ -211,7 +193,6 @@ Notes:
             flashcard_output = model.generate_content(flashcard_prompt).text
             st.text_area("Generated Flashcards and MCQs:", flashcard_output, height=300)
 
-        # Save session to DB
         timestamp = datetime.now().isoformat()
         cursor.execute("""
         INSERT INTO sessions (timestamp, user_query, notes, summary, flashcards)
