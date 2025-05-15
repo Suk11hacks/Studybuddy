@@ -1,10 +1,10 @@
 streamlit
-duckduckgo-search
 google-generativeai
 PyMuPDF
-opencv-python-headless  # <--- instead of opencv-python
+whisper
 pytube
 python-docx
 fpdf
-moviepy
-whisper
+requests
+beautifulsoup4
+
