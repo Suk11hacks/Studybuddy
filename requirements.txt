@@ -1,11 +1,11 @@
 streamlit
-duckduckgo_search
+duckduckgo-search
 google-generativeai
-pymupdf
-OpenCV
-moviepy
-openai-whisper
+PyMuPDF
+opencv-python
+whisper
 pytube
 python-docx
 fpdf
-sqlite3  # optional; part of stdlib but doesn't hurt
+moviepy
+ffmpeg
