@@ -2,10 +2,9 @@ streamlit
 duckduckgo-search
 google-generativeai
 PyMuPDF
-opencv-python
-whisper
+opencv-python-headless  # <--- instead of opencv-python
 pytube
 python-docx
 fpdf
 moviepy
-ffmpeg
+whisper
